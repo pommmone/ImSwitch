@@ -223,10 +223,10 @@ class ScanInfo:
 @dataclass(frozen=True)
 class EtSTEDInfo:
     detectorFast: str
-    """ Name of the STED detector to use. """
+    """ Name of the STED detector to use. """ #comment from Simone, should this be "widefield detector to use?"
 
     detectorSlow: str
-    """ Name of the widefield detector to use. """
+    """ Name of the widefield detector to use. """ #comment from Simone, should this be "STED detector to use?"
 
     laserFast: str
     """ Name of the widefield laser to use. """
