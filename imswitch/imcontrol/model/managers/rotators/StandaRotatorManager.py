@@ -64,6 +64,7 @@ class StandaRotatorManager(RotatorManager):
             self.__logger.info(f'Initialized Standa motor {device_id}')
         except Exception:
             self.__logger.warning(f'Failed to initialize Standa motor {device_id}, loading mocker')
+            self.__logger.warning(f'Check if the lib_loc in the setupFileName json is availalbe (network drive)') #eventually move this file to a local drive. Need to adjust all .json s
             from imswitch.imcontrol.model.interfaces.standamotor import MockStandaMotor
             motor = MockStandaMotor(lib_loc)
         return motor
