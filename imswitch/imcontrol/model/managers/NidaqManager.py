@@ -378,10 +378,13 @@ class NidaqManager(SignalInterface):
                 self.__logger.info('Nidaq scan started!')
 
     def stopTask(self, taskName):
+        self.__logger.info(['stopping', taskName])
         self.tasks[taskName].stop()
+        self.__logger.info(['stopped', taskName])
         self.tasks[taskName].close()
+        self.__logger.info(['closed', taskName])
         del self.tasks[taskName]
-        self.__logger.info(['stop', taskName])
+        self.__logger.info(['deleted', taskName])
 
     def inputTaskDone(self, taskName):
         if not self.signalSent:
@@ -391,6 +394,7 @@ class NidaqManager(SignalInterface):
         self.__logger.info(['input done', taskName])
 
     def taskDone(self, taskName, taskWaiter):
+        self.__logger.info([taskWaiter.running, self.signalSent])
         if not taskWaiter.running and not self.signalSent:
             self.stopTask(taskName)
             if not self.tasks:
