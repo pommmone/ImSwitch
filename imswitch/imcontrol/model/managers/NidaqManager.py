@@ -245,6 +245,7 @@ class NidaqManager(SignalInterface):
         """ Function assuming that the user wants to run a full scan with a stage
         controlled by analog voltage outputs and a cycle of TTL pulses continuously
         running. """
+        self.__logger.info(self.tasks)
         if not self.busy:
             self.busy = True
             self.signalSent = False
@@ -380,24 +381,28 @@ class NidaqManager(SignalInterface):
         self.tasks[taskName].stop()
         self.tasks[taskName].close()
         del self.tasks[taskName]
+        self.__logger.info(['stop', taskName])
 
     def inputTaskDone(self, taskName):
         if not self.signalSent:
             self.stopTask(taskName)
             if not self.tasks:
                 self.scanDone()
+        self.__logger.info(['input done', taskName])
 
     def taskDone(self, taskName, taskWaiter):
         if not taskWaiter.running and not self.signalSent:
             self.stopTask(taskName)
             if not self.tasks:
                 self.scanDone()
+        self.__logger.info(['done', taskName])
 
     def scanDone(self):
         self.signalSent = True
         self.busy = False
         self.__logger.info('Nidaq scan finished!')
         self.sigScanDone.emit()
+        self.__logger.info(self.tasks)
 
     def runContinuous(self, digital_targets, digital_signals):
         pass
