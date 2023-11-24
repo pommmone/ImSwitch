@@ -40,7 +40,7 @@ class APDManager(DetectorManager):
         self._ttlmultiplying = False
         self.acquisition = True
         self._debug_mode = False  # run mode for plotting detected samples
-        self._simulation_mode = True  # run mode for generating detected samples
+        self._simulation_mode = False  # run mode for generating detected samples
 
         # Prepare detector manager parameters and signal connections
         parameters = {}
@@ -344,8 +344,10 @@ class ScanWorker(Worker):
             self.throwdata(self._throw_init_smooth)
         # loop through all dimensions to record data, starting with the outermost dimension
         self.run_loop_dx(dim=len(self._img_dims))
+        if self._manager._simulation_mode:
+            # call mock acquisition done in nidaqmanager
+            self._manager._nidaqManager.finishExternalMock()
         # emit acquisition done signal
-        self._manager._nidaqManager.finishExternalMock()
         self.acqDoneSignal.emit()
 
     def run_loop_dx(self, dim):
