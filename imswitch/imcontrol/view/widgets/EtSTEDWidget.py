@@ -70,7 +70,7 @@ class EtSTEDWidget(Widget):
                 if transform.endswith('.csv'):
                     transform = transform.split('.')[0]
                     self.transformCoefs.append(transform)
-        
+        self.transformCoefs = sorted(self.transformCoefs) # added to make it easier, should show latest on top
         self.transformCoefsPar.addItems(self.transformCoefs)
         self.transformCoefsPar.setCurrentIndex(0)
 
@@ -130,6 +130,12 @@ class EtSTEDWidget(Widget):
         self.update_period_label = QtGui.QLabel('Update period (ms)')
         self.update_period_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
         self.update_period_edit = QtGui.QLineEdit(str(100))
+        self.slow_frames_label = QtGui.QLabel('Number of slow frames') # adding two new boxes for the timelapse scanning
+        self.slow_frames_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
+        self.slow_frames_edit = QtGui.QLineEdit(str(1))
+        self.slow_timelapse_label = QtGui.QLabel('Time between slow frames (s)')
+        self.slow_timelapse_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
+        self.slow_timelapse_edit = QtGui.QLineEdit(str(30))
 
         # help widget for coordinate transform
         self.coordTransformWidget = CoordTransformWidget(*args, **kwargs)
@@ -179,6 +185,16 @@ class EtSTEDWidget(Widget):
         self.grid.addWidget(self.update_period_edit, currentRow, 3)
         self.grid.addWidget(self.setUpdatePeriodButton, currentRow, 4)
 
+        currentRow += 1
+
+        self.grid.addWidget(self.slow_frames_label, currentRow, 2) #new addition for timelapse etSTED
+        self.grid.addWidget(self.slow_frames_edit, currentRow, 3)
+        # do I need to add something to update this?
+        currentRow += 1
+
+        self.grid.addWidget(self.slow_timelapse_label, currentRow, 2) #new addition for timelapse etSTED
+        self.grid.addWidget(self.slow_timelapse_edit, currentRow, 3)
+        # do I need to add something to update this?
         currentRow += 1
 
         self.grid.addWidget(self.fastImgDetectorsPar_label, currentRow, 2)
