@@ -5,6 +5,7 @@ import importlib
 import enum
 import h5py
 import csv
+import time
 
 from collections import deque
 from datetime import datetime
@@ -189,6 +190,19 @@ class EtSTEDController(ImConWidgetController):
         elif self.scanInitiationMode == ScanInitiationMode.RecordingWidget:
             # Run recording from RecWidget
             self.triggerRecordingWidgetScan()
+
+    def runSlowScanTimelapse(self):
+        """ Run a timelapse of scans of the slow method (STED). """
+        # work in progress, starting by hardcoding the number of frames and and time between
+        number_of_frames = 5
+        frequency = 30  # next frame after X seconds
+        total_timelapse_time = frequency * number_of_frames
+        self.setDetLogLine("total_timelapse_time", total_timelapse_time)
+        self.setDetLogLine("number_of_frames", number_of_frames)
+        for i in len(range(number_of_frames-1)):
+            self.runSlowScan()
+            if i != number_of_frames-1:
+                time.sleep(frequency)
 
     def endRecording(self):
         """ Save an etSTED slow method scan. """
@@ -461,7 +475,9 @@ class EtSTEDController(ImConWidgetController):
                         if self._widget.useScanLaserPresetCheck.isChecked():
                             self._commChannel.sigScanStarting.emit()
                         
-                        self.runSlowScan()
+
+                        #self.runSlowScan() #let's replace this with a timelapse, for now hardcoded. need to make sure to get the values from the GUI soon
+                        self.runSlowScanTimelapse() # now doing timelapses instead
 
                         # update scatter plot of event coordinates in the shown fast method image
                         self.updateScatter(coords_detected, clear=True)
