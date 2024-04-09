@@ -191,17 +191,18 @@ class EtSTEDController(ImConWidgetController):
             # Run recording from RecWidget
             self.triggerRecordingWidgetScan()
 
-    def runSlowScanTimelapse(self):
+    def runSlowScanTimelapse(self): #the problem here is we are currently only saving the last APD file
         """ Run a timelapse of scans of the slow method (STED). """
         # work in progress, starting by hardcoding the number of frames and and time between
-        number_of_frames = 5
-        frequency = 30  # next frame after X seconds
+        number_of_frames = 2
+        frequency = 2  # next frame after X seconds
         total_timelapse_time = frequency * number_of_frames
-        self.setDetLogLine("total_timelapse_time", total_timelapse_time)
-        self.setDetLogLine("number_of_frames", number_of_frames)
-        for i in len(range(number_of_frames-1)):
+        self.setDetLogLine("total_timelapse_time", total_timelapse_time) #this is not printing, not sure why
+        self.setDetLogLine("number_of_frames", number_of_frames) #this is not printing, not sure why
+        for i in range(number_of_frames):
+            print(f'Timelapse frame {i}')
             self.runSlowScan()
-            if i != number_of_frames-1:
+            if i != number_of_frames:
                 time.sleep(frequency)
 
     def endRecording(self):

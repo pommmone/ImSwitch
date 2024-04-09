@@ -70,7 +70,7 @@ class EtSTEDWidget(Widget):
                 if transform.endswith('.csv'):
                     transform = transform.split('.')[0]
                     self.transformCoefs.append(transform)
-        self.transformCoefs = sorted(self.transformCoefs) # added to make it easier, should show latest on top
+        self.transformCoefs = sorted(self.transformCoefs, reverse=True) # added to make it easier, should show latest on top
         self.transformCoefsPar.addItems(self.transformCoefs)
         self.transformCoefsPar.setCurrentIndex(0)
 
