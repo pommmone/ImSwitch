@@ -121,8 +121,8 @@ class EtSTEDController(ImConWidgetController):
             # Reset parameter for extra information that pipelines can input and output
             self.__exinfo = None
 
-            self.slow_timelapse_value = self.slow_timelapse_edit.text() #get time interval for slow STED scan timelapse
-            self.slow_frames_value = self.slow_frames_value.text() #get number of frames for slow STED scan timelapse
+            self.slow_timelapse_value = self._widget.slow_timelapse_edit.text() #get time interval for slow STED scan timelapse
+            self.slow_frames_value = self._widget.slow_frames_edit.text() #get number of frames for slow STED scan timelapse
             
             # Check if visualization mode, in case launch help widget
             experimentModeIdx = self._widget.experimentModesPar.currentIndex()
@@ -201,8 +201,8 @@ class EtSTEDController(ImConWidgetController):
     def runSlowScanTimelapse(self): #the problem here is we are currently only saving the last APD file
         """ Run a timelapse of scans of the slow method (STED). """
         # work in progress, trying to get the timelapse parameters from the GUI
-        number_of_frames = self.slow_frames_value
-        frequency = self.slow_timelapse_value  # next frame after X seconds
+        number_of_frames = int(self.slow_frames_value)
+        frequency = int(self.slow_timelapse_value)  # next frame after X seconds
 
         total_timelapse_time = frequency * number_of_frames
         
