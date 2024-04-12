@@ -70,7 +70,7 @@ class EtSTEDWidget(Widget):
                 if transform.endswith('.csv'):
                     transform = transform.split('.')[0]
                     self.transformCoefs.append(transform)
-        self.transformCoefs = sorted(self.transformCoefs, reverse=True) # added to make it easier, should show latest on top
+        self.transformCoefs = sorted(self.transformCoefs, reverse=True)
         self.transformCoefsPar.addItems(self.transformCoefs)
         self.transformCoefsPar.setCurrentIndex(0)
 
@@ -79,7 +79,7 @@ class EtSTEDWidget(Widget):
         self.fastImgDetectorsPar = QtGui.QComboBox()
         self.fastImgDetectorsPar_label = QtGui.QLabel('Fast detector')
         self.fastImgDetectorsPar_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
-        # add all lasers in a dropdown list, for being the fastImgLaser (widefield)
+        # add all lasers in a dropdown list, for being the fastImgLaser (widefield) 473 laser
         self.fastImgLasers = list()
         self.fastImgLasersPar = QtGui.QComboBox()
         self.fastImgLasersPar_label = QtGui.QLabel('Fast laser')
@@ -251,6 +251,7 @@ class EtSTEDWidget(Widget):
         """ Set combobox with available detectors to use for the fast method. """
         for detectorName, _ in detectorNames.items():
             self.fastImgDetectors.append(detectorName)
+        self.fastImgDetectors = sorted(self.fastImgDetectors, reverse=True) #sorted to have Widefield automatically there
         self.fastImgDetectorsPar.addItems(self.fastImgDetectors)
         self.fastImgDetectorsPar.setCurrentIndex(0)
 

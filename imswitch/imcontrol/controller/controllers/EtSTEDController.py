@@ -60,7 +60,7 @@ class EtSTEDController(ImConWidgetController):
             self._master.lasersManager.execOnAll(lambda c: c.name)
         )
 
-        self.scanInitiationList = ['ScanWidget','RecordingWidget']
+        self.scanInitiationList = ['ScanWidget','(Depreciated) RecordingWidget']
         self._widget.setScanInitiationList(self.scanInitiationList)
 
         sys.path.append(self._widget.analysisDir)
@@ -95,7 +95,7 @@ class EtSTEDController(ImConWidgetController):
         self.__binary_mask = None
         self.__binary_stack = None
         self.__binary_frames = 10
-        self.__init_frames = 5
+        self.__init_frames = 5 #this is the minimum number of frames before a event will trigger the slow method
         self.__validationFrames = 0
         self.__frame = 0
         self.__t_call = 0
@@ -120,6 +120,9 @@ class EtSTEDController(ImConWidgetController):
             self.__param_vals = self.readParams()
             # Reset parameter for extra information that pipelines can input and output
             self.__exinfo = None
+
+            self.slow_timelapse_value = self.slow_timelapse_edit.text() #get time interval for slow STED scan timelapse
+            self.slow_frames_value = self.slow_frames_value.text() #get number of frames for slow STED scan timelapse
             
             # Check if visualization mode, in case launch help widget
             experimentModeIdx = self._widget.experimentModesPar.currentIndex()
@@ -175,6 +178,10 @@ class EtSTEDController(ImConWidgetController):
         self.continueFastModality()
         self.__frame = 0
 
+    def scanFrameEnded(self): # is this what saves the STED frame? Let's find out. calling it after each frame in the runSlowScanTimelapse
+        if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
+            self._commChannel.sigSnapImg.emit()
+
     def setDetLogLine(self, key, val, *args):
         if args:
             self.__detLog[f"{key}{args[0]}"] = val
@@ -193,15 +200,18 @@ class EtSTEDController(ImConWidgetController):
 
     def runSlowScanTimelapse(self): #the problem here is we are currently only saving the last APD file
         """ Run a timelapse of scans of the slow method (STED). """
-        # work in progress, starting by hardcoding the number of frames and and time between
-        number_of_frames = 2
-        frequency = 2  # next frame after X seconds
+        # work in progress, trying to get the timelapse parameters from the GUI
+        number_of_frames = self.slow_frames_value
+        frequency = self.slow_timelapse_value  # next frame after X seconds
+
         total_timelapse_time = frequency * number_of_frames
+        
         self.setDetLogLine("total_timelapse_time", total_timelapse_time) #this is not printing, not sure why
         self.setDetLogLine("number_of_frames", number_of_frames) #this is not printing, not sure why
         for i in range(number_of_frames):
             print(f'Timelapse frame {i}')
             self.runSlowScan()
+            self.scanFrameEnded() # added this to trying to save the just recorded slow scan frame
             if i != number_of_frames:
                 time.sleep(frequency)
 
@@ -475,13 +485,12 @@ class EtSTEDController(ImConWidgetController):
                         # trigger scan starting signal emission or not - if triggered, use scan-standard laser preset
                         if self._widget.useScanLaserPresetCheck.isChecked():
                             self._commChannel.sigScanStarting.emit()
-                        
+ 
+                        # update scatter plot of event coordinates in the shown fast method image
+                        self.updateScatter(coords_detected, clear=True) # moved this up, does it not show before the timelapse starts?  
 
                         #self.runSlowScan() #let's replace this with a timelapse, for now hardcoded. need to make sure to get the values from the GUI soon
                         self.runSlowScanTimelapse() # now doing timelapses instead
-
-                        # update scatter plot of event coordinates in the shown fast method image
-                        self.updateScatter(coords_detected, clear=True)
 
                         self.__prevFrames.append(img)
                         self.saveValidationImages(prev=True, prev_ana=False)
