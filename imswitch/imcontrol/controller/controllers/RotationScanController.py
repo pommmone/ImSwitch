@@ -39,6 +39,7 @@ class RotationScanController(ImConWidgetController):
         self.__calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan')
         if not os.path.exists(self.__calibration_dir):
             os.makedirs(self.__calibration_dir)
+        #self.__calibration_load_filename = 'polarization_calibration.json' # do we need something like this?
 
         # initiate thread and worker
         self._rotationScanWorker = None
@@ -151,7 +152,9 @@ class RotationScanController(ImConWidgetController):
     def loadCalibration(self):
         """ Load calibration data, to be used to interpolate the same spline interpolation in a new instance. """
         rotator_positions = []
-        with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'r') as f:
+        calibname = self.getCalibName()
+        #with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'r') as f:
+        with open(os.path.join(self.__calibration_dir, calibname), 'r') as f: #
             data = json.load(f)
         for idx, item in enumerate(data.items()):
             if idx == 0:
@@ -163,6 +166,12 @@ class RotationScanController(ImConWidgetController):
         self.__logger.info(self.__calibrationPolSteps)
         self.__logger.info(self.__rotCalPos)
         self.calibrateRotationsFinish(load_data=True)
+
+    def getCalibName(self):
+        """ Get the name of the pipeline currently used. """
+        calibidx = self._widget.pars['LoadCalibrateEdit'].currentIndex()
+        calibname = self._widget.pars['LoadCalibrateEdit'][transformidx]
+        return calibname
 
     def calibrationStep(self, step):
         """ Takes a step of the calibration routine, saving set rotations and preparing for the next step. """

@@ -1,5 +1,5 @@
 from qtpy import QtCore, QtWidgets, QtGui
-
+import os
 from imswitch.imcontrol.view import guitools as guitools
 
 from .basewidgets import Widget
@@ -32,11 +32,24 @@ class RotationScanWidget(Widget):
         self.pars['RotStopLabel'] = QtWidgets.QLabel('Pol. rotation stop')
         self.pars['RotStopEdit'] = QtWidgets.QLineEdit('80')
         self.pars['RotStopUnit'] = QtWidgets.QLabel(' deg')
+        self.pars['LoadCalibrateLabel'] = QtWidgets.QLabel('Calibration file')
+        # add all available calibrations to a dropdown list
+        self.pars['LoadCalibrateEdit'] =  QtWidgets.QComboBox()
+        self.LoadCalibrationFiles = list()
+        for calib in os.listdir(self.calibration_dir):
+            if os.path.isfile(os.path.join(self.calibration_dir, calib)):
+                calib = calib.split('.')[0]
+                self.LoadCalibrationFiles.append(calib)
+        self.pars['LoadCalibrateEdit'].addItems(self.LoadCalibrationFiles)
+        self.pars['LoadCalibrateEdit'].setCurrentIndex(0)
 
         self.pars['ActivateButton'] = guitools.BetterPushButton('Activate during scan')
         self.pars['CalibrateButton'] = guitools.BetterPushButton('Calibrate polarization')
         self.pars['SaveCalibrationButton'] = guitools.BetterPushButton('Save calibration')
-        self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration')
+        #self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration') #want drop down list instead
+        
+        # add all available polarization rotation calibrations to a dropdown list
+        
 
         # Parameters for calibration routine
         self.pars['CalibrationPrompt'] = QtWidgets.QLineEdit('Calibration not active.')
@@ -56,7 +69,9 @@ class RotationScanWidget(Widget):
         self.grid.addWidget(self.pars['RotStopEdit'], 2, 1)
         self.grid.addWidget(self.pars['RotStopUnit'], 2, 2)
         self.grid.addWidget(self.pars['CalibrateButton'], 0, 3)
-        self.grid.addWidget(self.pars['LoadCalibrationButton'], 1, 3)
+        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 1, 0) # new for drop down list
+        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 1, 1) # new for drop down list
+        self.grid.addWidget(self.pars['LoadCalibrationButton'], 1, 3) # want drop down list left of this
         self.grid.addWidget(self.pars['SaveCalibrationButton'], 2, 3)
         self.grid.addWidget(self.pars['ActivateButton'], 3, 3)
         self.grid.addItem(QtWidgets.QSpacerItem(10, 10,
