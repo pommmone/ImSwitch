@@ -36,10 +36,9 @@ class RotationScanController(ImConWidgetController):
         self.__calibration_range = 180
         self.__calibrationPolSteps = np.arange(0,self.__calibration_range+1,20).tolist()
         self.__calibration_filename = 'polarization_calibration.json'
-        self.__calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan')
+        self.__calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan') 
         if not os.path.exists(self.__calibration_dir):
             os.makedirs(self.__calibration_dir)
-        #self.__calibration_load_filename = 'polarization_calibration.json' # do we need something like this?
 
         # initiate thread and worker
         self._rotationScanWorker = None
@@ -152,7 +151,8 @@ class RotationScanController(ImConWidgetController):
     def loadCalibration(self):
         """ Load calibration data, to be used to interpolate the same spline interpolation in a new instance. """
         rotator_positions = []
-        calibname = self.getCalibName()
+        calibname = self.getCalibName() + '.json'
+        print(calibname)
         #with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'r') as f:
         with open(os.path.join(self.__calibration_dir, calibname), 'r') as f: #
             data = json.load(f)
@@ -168,9 +168,9 @@ class RotationScanController(ImConWidgetController):
         self.calibrateRotationsFinish(load_data=True)
 
     def getCalibName(self):
-        """ Get the name of the pipeline currently used. """
-        calibidx = self._widget.pars['LoadCalibrateEdit'].currentIndex()
-        calibname = self._widget.pars['LoadCalibrateEdit'][transformidx]
+        """ Get the name of the calibration currently used. """
+        calibidx = self._widget.pars['LoadCalibrateEdit'].currentIndex()        #calibname = self._widget.pars['LoadCalibrateEdit'][calibidx]
+        calibname = self._widget.pars['LoadCalibrateEdit'].itemText(calibidx)
         return calibname
 
     def calibrationStep(self, step):

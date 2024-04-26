@@ -1,7 +1,7 @@
 from qtpy import QtCore, QtWidgets, QtGui
 import os
 from imswitch.imcontrol.view import guitools as guitools
-
+from imswitch.imcommon.model import dirtools
 from .basewidgets import Widget
 
 
@@ -20,6 +20,11 @@ class RotationScanWidget(Widget):
         self.grid = QtWidgets.QGridLayout()
         self.setLayout(self.grid)
         self.enabled = True
+
+        self.calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan')
+        if not os.path.exists(self.calibration_dir):
+            os.makedirs(self.calibration_dir)
+
 
     def initControls(self):
         # Treat parameters as polarization rotation parameters.
@@ -46,7 +51,7 @@ class RotationScanWidget(Widget):
         self.pars['ActivateButton'] = guitools.BetterPushButton('Activate during scan')
         self.pars['CalibrateButton'] = guitools.BetterPushButton('Calibrate polarization')
         self.pars['SaveCalibrationButton'] = guitools.BetterPushButton('Save calibration')
-        #self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration') #want drop down list instead
+        self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration') #want drop down list, but still need to load
         
         # add all available polarization rotation calibrations to a dropdown list
         
@@ -59,19 +64,19 @@ class RotationScanWidget(Widget):
         calibrationPromptPalette.setColor(QtGui.QPalette.Base, QtGui.QColor(60, 60, 60))
         self.pars['CalibrationPrompt'].setPalette(calibrationPromptPalette)
 
-        self.grid.addWidget(self.pars['RotStepLabel'], 0, 0)
-        self.grid.addWidget(self.pars['RotStepEdit'], 0, 1)
-        self.grid.addWidget(self.pars['RotStepUnit'], 0, 2)
-        self.grid.addWidget(self.pars['RotStartLabel'], 1, 0)
-        self.grid.addWidget(self.pars['RotStartEdit'], 1, 1)
-        self.grid.addWidget(self.pars['RotStartUnit'], 1, 2)
-        self.grid.addWidget(self.pars['RotStopLabel'], 2, 0)
-        self.grid.addWidget(self.pars['RotStopEdit'], 2, 1)
-        self.grid.addWidget(self.pars['RotStopUnit'], 2, 2)
-        self.grid.addWidget(self.pars['CalibrateButton'], 0, 3)
-        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 1, 0) # new for drop down list
-        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 1, 1) # new for drop down list
-        self.grid.addWidget(self.pars['LoadCalibrationButton'], 1, 3) # want drop down list left of this
+        self.grid.addWidget(self.pars['RotStepLabel'], 1, 0)
+        self.grid.addWidget(self.pars['RotStepEdit'], 1, 1)
+        self.grid.addWidget(self.pars['RotStepUnit'], 1, 2)
+        self.grid.addWidget(self.pars['RotStartLabel'], 2, 0)
+        self.grid.addWidget(self.pars['RotStartEdit'], 2, 1)
+        self.grid.addWidget(self.pars['RotStartUnit'], 2, 2)
+        self.grid.addWidget(self.pars['RotStopLabel'], 3, 0)
+        self.grid.addWidget(self.pars['RotStopEdit'], 3, 1)
+        self.grid.addWidget(self.pars['RotStopUnit'], 3, 2)
+        self.grid.addWidget(self.pars['CalibrateButton'], 1, 3)
+        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 0, 0) # new for drop down list
+        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 0, 1) # new for drop down list
+        self.grid.addWidget(self.pars['LoadCalibrationButton'], 0, 3) # want drop down list left of this
         self.grid.addWidget(self.pars['SaveCalibrationButton'], 2, 3)
         self.grid.addWidget(self.pars['ActivateButton'], 3, 3)
         self.grid.addItem(QtWidgets.QSpacerItem(10, 10,
