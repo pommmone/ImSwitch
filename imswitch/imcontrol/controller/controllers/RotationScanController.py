@@ -151,10 +151,16 @@ class RotationScanController(ImConWidgetController):
     def loadCalibration(self):
         """ Load calibration data, to be used to interpolate the same spline interpolation in a new instance. """
         rotator_positions = []
+<<<<<<< Updated upstream
         calibname = self.getCalibName() + '.json'
         print(calibname)
         #with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'r') as f:
         with open(os.path.join(self.__calibration_dir, calibname), 'r') as f: #
+=======
+        calibname = self.getCalibName()
+        with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'r') as f:
+        #with open(os.path.join(self.__calibration_dir, calibname), 'r') as f: #
+>>>>>>> Stashed changes
             data = json.load(f)
         for idx, item in enumerate(data.items()):
             if idx == 0:
