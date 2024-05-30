@@ -191,29 +191,32 @@ class EtSTEDController(ImConWidgetController):
     def runSlowScan(self):
         """ Run a scan of the slow method (STED). """
         self.__detLog[f"scan_start"] = datetime.now().strftime('%Ss%fus')
-        if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
+        self._logger.debug(f'Started runSlowScan')
+        if self.scanInitiationMode == ScanInitiationMode.ScanWidget: 
+        
             # Run scan in nidaqManager
             self._master.nidaqManager.runScan(self.signalDic, self.scanInfoDict)
         elif self.scanInitiationMode == ScanInitiationMode.RecordingWidget:
             # Run recording from RecWidget
             self.triggerRecordingWidgetScan()
 
-    def runSlowScanTimelapse(self): #the problem here is we are currently only saving the last APD file
+    def runSlowScanTimelapse(self): #some issues with saving.. need to figure out (was one too many, added -1, they look identical??)
         """ Run a timelapse of scans of the slow method (STED). """
         # work in progress, trying to get the timelapse parameters from the GUI
         number_of_frames = int(self.slow_frames_value)
         frequency = int(self.slow_timelapse_value)  # next frame after X seconds
 
         total_timelapse_time = frequency * number_of_frames
-        
-        self.setDetLogLine("total_timelapse_time", total_timelapse_time) #this is not printing, not sure why
-        self.setDetLogLine("number_of_frames", number_of_frames) #this is not printing, not sure why
-        for i in range(number_of_frames):
+        self._logger.debug(f'Total_timelapse_time: {total_timelapse_time} s')
+        self._logger.debug(f'Number_of_frames: {number_of_frames}')
+
+        for i in range(number_of_frames-1):
             print(f'Timelapse frame {i}')
             self.runSlowScan()
-            self.scanFrameEnded() # added this to trying to save the just recorded slow scan frame
-            if i != number_of_frames:
+            self.scanFrameEnded() # to save the image.. problem: the first image is black, the last gets added to the next etSTED measurement --> need to wait for Nidaq manager to finish! how?            
+            if i != (number_of_frames):
                 time.sleep(frequency)
+            
 
     def endRecording(self):
         """ Save an etSTED slow method scan. """
@@ -476,6 +479,7 @@ class EtSTEDController(ImConWidgetController):
                         self._logger.debug(f'coords_wf: {coords_wf}')
                         self._logger.debug(f'coords_scan: {coords_scan}')
                         try:
+                            self._logger.debug(f'trying to initiate slow scan')
                             self.initiateSlowScan(position=coords_scan)
                         except Exception as e:
                             self._logger.error(f"Failed to initiate slow scan, likely due to not having loaded scanning parameters. Error message: {e}")
@@ -526,7 +530,7 @@ class EtSTEDController(ImConWidgetController):
                     self._analogParameterDict, self._digitalParameterDict, False
                 )
             except:
-                self._logger.debug('Error when initiating ScanWidget scan')
+                self._logger.error('Error when initiating ScanWidget scan, is correct coordinate trafo and widefield ROI loaded')
                 return
         elif self.scanInitiationMode == ScanInitiationMode.RecordingWidget:
             self._commChannel.sigRequestScanFreq.emit()
