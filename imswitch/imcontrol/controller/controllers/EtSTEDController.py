@@ -16,6 +16,8 @@ import pyqtgraph as pg
 import numpy as np
 from tkinter.filedialog import askopenfilename
 
+from imswitch.imcommon.framework import Timer
+
 from imswitch.imcommon.model import dirtools
 from ..basecontrollers import ImConWidgetController
 from imswitch.imcommon.model import initLogger
@@ -166,6 +168,7 @@ class EtSTEDController(ImConWidgetController):
 
     def scanEnded(self):
         """ End an etSTED slow method scan. """
+        self._logger.debug('ended')
         self.setDetLogLine("scan_end",datetime.now().strftime('%Ss%fus'))
         if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
             self._commChannel.sigSnapImg.emit()
@@ -192,8 +195,7 @@ class EtSTEDController(ImConWidgetController):
         """ Run a scan of the slow method (STED). """
         self.__detLog[f"scan_start"] = datetime.now().strftime('%Ss%fus')
         self._logger.debug(f'Started runSlowScan')
-        if self.scanInitiationMode == ScanInitiationMode.ScanWidget: 
-        
+        if self.scanInitiationMode == ScanInitiationMode.ScanWidget:      
             # Run scan in nidaqManager
             self._master.nidaqManager.runScan(self.signalDic, self.scanInfoDict)
         elif self.scanInitiationMode == ScanInitiationMode.RecordingWidget:
@@ -202,22 +204,34 @@ class EtSTEDController(ImConWidgetController):
 
     def runSlowScanTimelapse(self): #some issues with saving.. need to figure out (was one too many, added -1, they look identical??)
         """ Run a timelapse of scans of the slow method (STED). """
-        # work in progress, trying to get the timelapse parameters from the GUI
-        number_of_frames = int(self.slow_frames_value)
-        frequency = int(self.slow_timelapse_value)  # next frame after X seconds
-
-        total_timelapse_time = frequency * number_of_frames
-        self._logger.debug(f'Total_timelapse_time: {total_timelapse_time} s')
-        self._logger.debug(f'Number_of_frames: {number_of_frames}')
-
-        for i in range(number_of_frames-1):
-            print(f'Timelapse frame {i}')
+    
+        if self.frameNumber == 0:
+            self.number_of_frames = int(self.slow_frames_value)
+            self.frequency = int(self.slow_timelapse_value)  # next frame after X seconds
+            total_timelapse_time = self.frequency * self.number_of_frames
+            self._logger.debug(f'Total_timelapse_time: {total_timelapse_time} s')
+            self._logger.debug(f'Number_of_frames: {self.number_of_frames}')
+            self._logger.debug(f'Timelapse frame {self.frameNumber}')
             self.runSlowScan()
-            self.scanFrameEnded() # to save the image.. problem: the first image is black, the last gets added to the next etSTED measurement --> need to wait for Nidaq manager to finish! how?            
-            if i != (number_of_frames):
-                time.sleep(frequency)
-            
+            self.timer = Timer(singleShot=True)
+            self.timer.timeout.connect(self.runSlowScanTimelapse)
+            self.timer.start(int(self.frequency*1000))
+            self.frameNumber += 1
+        elif self.frameNumber == self.number_of_frames:
+            self.scanFrameEnded() # to save the image.. problem: the first image is black, the rest are identical --> need to wait for Nidaq manager to finish! how?            
+            self._logger.debug('Slow scan saved')
+            self._logger.debug(f'we should be done')
+        else:
+            self.scanFrameEnded() # to save the image.. problem: the first image is black, the rest are identical --> need to wait for Nidaq manager to finish! how?            
+            self._logger.debug('Slow scan saved')
+            self._logger.debug(f'Timelapse frame {self.frameNumber}')
+            self.runSlowScan()
+            self.timer = Timer(singleShot=True)
+            self.timer.timeout.connect(self.runSlowScanTimelapse)
+            self.timer.start(int(self.frequency*1000))
+            self.frameNumber += 1
 
+ 
     def endRecording(self):
         """ Save an etSTED slow method scan. """
         self.setDetLogLine("pipeline", self.getPipelineName())
@@ -480,7 +494,7 @@ class EtSTEDController(ImConWidgetController):
                         self._logger.debug(f'coords_scan: {coords_scan}')
                         try:
                             self._logger.debug(f'trying to initiate slow scan')
-                            self.initiateSlowScan(position=coords_scan)
+                            self.initiateSlowScan(position=coords_scan) 
                         except Exception as e:
                             self._logger.error(f"Failed to initiate slow scan, likely due to not having loaded scanning parameters. Error message: {e}")
                             self.setBusyFalse()
@@ -491,9 +505,9 @@ class EtSTEDController(ImConWidgetController):
                             self._commChannel.sigScanStarting.emit()
  
                         # update scatter plot of event coordinates in the shown fast method image
-                        self.updateScatter(coords_detected, clear=True) # moved this up, does it not show before the timelapse starts?  
+                        self.updateScatter(coords_detected, clear=True) # moved this up, does it now show before the timelapse starts?  
 
-                        #self.runSlowScan() #let's replace this with a timelapse, for now hardcoded. need to make sure to get the values from the GUI soon
+                        #self.runSlowScan() #let's replace this with a timelapse
                         self.runSlowScanTimelapse() # now doing timelapses instead
 
                         self.__prevFrames.append(img)
@@ -522,6 +536,7 @@ class EtSTEDController(ImConWidgetController):
         #dt = datetime.now()
         #time_curr_before = round(dt.microsecond/1000)
         self.setCenterScanParameter(position)
+        self.frameNumber = 0
         #dt = datetime.now()
         #time_curr_mid = round(dt.microsecond/1000)
         if self.scanInitiationMode == ScanInitiationMode.ScanWidget:

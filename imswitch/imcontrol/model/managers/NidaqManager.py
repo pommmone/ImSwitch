@@ -247,6 +247,8 @@ class NidaqManager(SignalInterface):
         """ Function assuming that the user wants to run a full scan with a stage
         controlled by analog voltage outputs and a cycle of TTL pulses continuously
         running. """
+        #self._logger.debug('nidaq runscan function called')
+        #self._logger.debug(f'busy: {self.busy}')
         if not self.busy:
             self.busy = True
             self.signalSent = False
