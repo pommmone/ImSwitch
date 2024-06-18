@@ -76,6 +76,7 @@ class EtSTEDController(ImConWidgetController):
 
         # Connect EtSTEDWidget and communication channel signals
         self._widget.initiateButton.clicked.connect(self.initiate)
+        self._widget.initiateButton.clicked.connect(self.stopSlowScanTimelapse) #20240618 (SE) added to stop timelapse
         self._widget.loadPipelineButton.clicked.connect(self.loadPipeline)
         self._widget.recordBinaryMaskButton.clicked.connect(self.initiateBinaryMask)
         self._widget.loadScanParametersButton.clicked.connect(self.getScanParameters)
@@ -103,11 +104,11 @@ class EtSTEDController(ImConWidgetController):
         self.__t_call = 0
         self.__maxAnaImgVal = 0
         self.__flipwfcalib = False  # flipping widefield image when loading for transformation calibration
-
+        self.__timelapseRunning = False
 
     def initiate(self):
         """ Initiate or stop an etSTED experiment. """
-        if not self.__running:
+        if not self.__running and not self.__timelapseRunning:
             detectorFastIdx = self._widget.fastImgDetectorsPar.currentIndex()
             self.detectorFast = self._widget.fastImgDetectors[detectorFastIdx]
             laserFastIdx = self._widget.fastImgLasersPar.currentIndex()
@@ -152,16 +153,19 @@ class EtSTEDController(ImConWidgetController):
 
             self._widget.initiateButton.setText('Stop')
             self.__running = True
-        else:
+        else: #TODO 20240618 (SE): needs work, need to abort timelapse
             # disconnect communication channel signals and turn off wf laser
-            self._commChannel.sigUpdateImage.disconnect(self.runPipeline)
+            try:
+                self._commChannel.sigUpdateImage.disconnect(self.runPipeline)
+            except:
+                pass
             if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
                 self._commChannel.sigToggleBlockScanWidget.emit(True)
                 self._commChannel.sigScanEnded.disconnect(self.scanEnded)
             elif self.scanInitiationMode == ScanInitiationMode.RecordingWidget:
                 self._commChannel.sigRecordingEnded.disconnect(self.scanEnded)
             self._master.lasersManager.execOn(self.laserFast, lambda l: l.setEnabled(False))
-
+            
             self._widget.initiateButton.setText('Initiate')
             self.resetParamVals()
             self.resetRunParams()
@@ -171,17 +175,17 @@ class EtSTEDController(ImConWidgetController):
         self._logger.debug('ended')
         self.setDetLogLine("scan_end",datetime.now().strftime('%Ss%fus'))
         if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
-            self._commChannel.sigSnapImg.emit()
+            #self._commChannel.sigSnapImg.emit() # with the timelapse this saves one additional frame that we dont want
             try:
                 total_scan_time = self.scanInfoDict['scan_samples_total'] * 10e-6  # length (s) of total scan signal
                 self.setDetLogLine("total_scan_time", total_scan_time)
             except:
                 self._logger.info("Scan 'total_scan_time' not saved in log as 'scan_samples_total' not available in scanInfoDict using current signal designer.")
         self.endRecording()
-        self.continueFastModality()
+        #self.continueFastModality() #At this position this means going back to widefield after one STED frame. Not compatible with the timelapse addition. needs to go after the last frame
         self.__frame = 0
 
-    def scanFrameEnded(self): # is this what saves the STED frame? Let's find out. calling it after each frame in the runSlowScanTimelapse
+    def scanFrameEnded(self): 
         if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
             self._commChannel.sigSnapImg.emit()
 
@@ -202,38 +206,48 @@ class EtSTEDController(ImConWidgetController):
             # Run recording from RecWidget
             self.triggerRecordingWidgetScan()
 
-    def runSlowScanTimelapse(self): #some issues with saving.. need to figure out (was one too many, added -1, they look identical??)
+    def runSlowScanTimelapse(self): 
         """ Run a timelapse of scans of the slow method (STED). """
-    
-        if self.frameNumber == 0:
-            self.number_of_frames = int(self.slow_frames_value)
-            self.frequency = int(self.slow_timelapse_value)  # next frame after X seconds
-            total_timelapse_time = self.frequency * self.number_of_frames
-            self._logger.debug(f'Total_timelapse_time: {total_timelapse_time} s')
-            self._logger.debug(f'Number_of_frames: {self.number_of_frames}')
-            self._logger.debug(f'Timelapse frame {self.frameNumber}')
-            self.runSlowScan()
-            self.timer = Timer(singleShot=True)
-            self.timer.timeout.connect(self.runSlowScanTimelapse)
-            self.timer.start(int(self.frequency*1000))
-            self.frameNumber += 1
-        elif self.frameNumber == self.number_of_frames:
-            self.scanFrameEnded() # to save the image.. problem: the first image is black, the rest are identical --> need to wait for Nidaq manager to finish! how?            
-            self._logger.debug('Slow scan saved')
-            self._logger.debug(f'we should be done')
-        else:
-            self.scanFrameEnded() # to save the image.. problem: the first image is black, the rest are identical --> need to wait for Nidaq manager to finish! how?            
-            self._logger.debug('Slow scan saved')
-            self._logger.debug(f'Timelapse frame {self.frameNumber}')
-            self.runSlowScan()
-            self.timer = Timer(singleShot=True)
-            self.timer.timeout.connect(self.runSlowScanTimelapse)
-            self.timer.start(int(self.frequency*1000))
-            self.frameNumber += 1
-
+        #TODO: implementing reaction to stop pressed (work in progress, 20240618 SE). Now buggy
+        if self.frameNumber == 0: # for the first frame
+            if self.__timelapseRunning:
+                self.number_of_frames = int(self.slow_frames_value)
+                self.frequency = int(self.slow_timelapse_value)  # next frame after X seconds
+                total_timelapse_time = self.frequency * self.number_of_frames
+                self._logger.debug(f'Total_timelapse_time: {total_timelapse_time} s')
+                self._logger.debug(f'Number_of_frames: {self.number_of_frames}')
+                self._logger.debug(f'Timelapse frame {self.frameNumber}')
+                self.runSlowScan()
+                self.timer = Timer(singleShot=True)
+                self.timer.timeout.connect(self.runSlowScanTimelapse)
+                self.timer.start(int(self.frequency*1000))
+                self.frameNumber += 1
+            else:
+                self._logger.debug(f'Stopped, frame {self.frameNumber} not recorded')
+                self.continueFastModality()
+        elif self.frameNumber == self.number_of_frames: # after the last frame
+            self.scanFrameEnded()
+            self._logger.debug(f'Last slow scan saved ({self.frameNumber-1})')
+            self._logger.debug(f'We should be done')
+            self.__timelapseRunning = False
+            self.continueFastModality() # 20240618 (SE): moved here from inside the scanFrameEnded function, so that in "endless" this only happens after the last STED timelapse frame is gone.           
+        else: #any other frame
+            self.scanFrameEnded()            
+            self._logger.debug(f'Slow scan saved ({self.frameNumber-1})')          
+            if self.__timelapseRunning:
+                self._logger.debug(f'Timelapse frame {self.frameNumber}')
+                self.runSlowScan()
+                self.timer = Timer(singleShot=True)
+                self.timer.timeout.connect(self.runSlowScanTimelapse)
+                self.timer.start(int(self.frequency*1000))
+                self.frameNumber += 1
+            else:
+                self._logger.debug(f'Stopped, frame {self.frameNumber} not recorded')
+                self.continueFastModality()
+            
  
     def endRecording(self):
-        """ Save an etSTED slow method scan. """
+        """ Save an etSTED slow method scan. """ # only a log file I think
         self.setDetLogLine("pipeline", self.getPipelineName())
         self.logPipelineParamVals()
         # save log file with temporal info of trigger event
@@ -277,15 +291,16 @@ class EtSTEDController(ImConWidgetController):
         if self._widget.endlessScanCheck.isChecked() and not self.__running:
             # connect communication channel signals
             self._commChannel.sigUpdateImage.connect(self.runPipeline)
-            self._master.lasersManager.execOn(self.laserFast, lambda l: l.setEnabled(True))
-            
+            self._master.lasersManager.execOn(self.laserFast, lambda l: l.setEnabled(True))           
             self._widget.initiateButton.setText('Stop')
             self.__running = True
         elif not self._widget.endlessScanCheck.isChecked():
             self._widget.initiateButton.setText('Initiate')
             if self.scanInitiationMode == ScanInitiationMode.ScanWidget:
                 self._commChannel.sigToggleBlockScanWidget.emit(True)
-                self._commChannel.sigScanEnded.disconnect(self.scanEnded)
+                try:
+                    self._commChannel.sigScanEnded.disconnect(self.scanEnded)
+                except: pass
             elif self.scanInitiationMode == ScanInitiationMode.RecordingWidget:
                 self._commChannel.sigRecordingEnded.disconnect(self.scanEnded)
             self.__running = False
@@ -641,6 +656,16 @@ class EtSTEDController(ImConWidgetController):
             self._commChannel.sigUpdateImage.disconnect(self.runPipeline)
             self._master.lasersManager.execOn(self.laserFast, lambda l: l.setEnabled(False))
             self.__running = False
+            self.__timelapseRunning = True
+
+    def stopSlowScanTimelapse(self): #20240618 (SE) add to abort timelapse scanning
+        """ Stop a running a timelapse, when "stop" is clicked"""
+        self._logger.debug(f'{self.__timelapseRunning}')
+        if self.__timelapseRunning:
+            self.__timelapseRunning = False
+            self._logger.debug(f'Stopped timelapse, finishing current frame')
+            self._widget.endlessScanCheck.setChecked(False)
+        self._logger.debug(f'{self.__timelapseRunning}')
 
     def getFlipWf(self):
         return self.__flipwfcalib
