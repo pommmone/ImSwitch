@@ -10,6 +10,7 @@ from imswitch.imcommon.model import dirtools, initLogger
 from ..basecontrollers import ImConWidgetController
 
 
+
 class RotationScanController(ImConWidgetController):
     """ Linked to RotationScanWidget. Requires the ability of the rotators to together create
     linear polarization states of different directions.
@@ -215,24 +216,39 @@ class RotationScanWorker(Worker):
     """ Rotation scan worker, to take care of the rotation step preparations in a separate thread. """
     def __init__(self, controller, rotators, rotsteps, numrotsteps):
         super().__init__()
+        self.__logger = initLogger(self, tryInheritParent=True)
         self._controller = controller
         self._rotators = rotators
         self._master = controller._master
         self._commChannel = controller._commChannel
         self.__rot_step_pos = rotsteps
         self.__num_rot_steps = numrotsteps
-
+        self.apd_count = self._apdCounter() #WIP Simone
+        #self.apd_count = 2
+        
         # connect new frame signal to prep next step
-        self.__prepRotationHandle = lambda: self.prepRotationStep()
+        self.signal_count = 0 #initialize, how many signals to wait for to rotate rotators
+        self.__prepRotationHandle = lambda: self.prepRotationStep() 
         #TODO: After step taken, prep controller with next step by calling self.prepRotationStep(). For this, need to know when step taken.
         # 1) Continuously check position of rotators in a separate thread and emit signal whenever updated?
         # 2) Use sync output of rotator controller - how do I read it, with a NiDAQ DI reading task?
         # 3) For now, do with a frame-finished signal from APDManager - non-general and APDManager specific
-        self._commChannel.sigNewFrame.connect(self.__prepRotationHandle)  # TODO: this will only work for one APDdetector, and nothing else - if no APD it will never trigger, if multiple APD it will trigger multiple times
-
+        #self._commChannel.sigNewFrame.connect(self.__prepRotationHandle) #commented by Simone to make work for 2 APDs # TODO: this will only work for one APDdetector, and nothing else - if no APD it will never trigger, if multiple APD it will trigger multiple times
+        self._commChannel.sigNewFrame.connect(self._signalHandler)
         # prepare first rotation step
         self.__currentStep = 0
         self.prepRotationStep(initial=True)
+
+    def _signalHandler(self):
+        self.signal_count += 1
+        #self.__logger.info(f'got {self.signal_count}/{self.apd_count} signals')
+        if self.signal_count >= self.apd_count:
+            self.__prepRotationHandle()
+            self.signal_count = 0 #Reset back to start
+
+    def _apdCounter(self):
+        return len([device for device in self._master.detectorsManager.getAllDeviceNames() if 'APD' in device])
+    
 
     def prepRotationStep(self, initial=False):
         """ Called when a polarization rotation step needs to be prepped, i.e. just after one step has been taken. """
@@ -240,8 +256,11 @@ class RotationScanWorker(Worker):
             #self.__logger.debug([self.__currentStep, rotator, self.__rot_step_pos[idx][self.__currentStep]])
             if initial:
                 self.moveAbsRotator(rotator, self.__rot_step_pos[idx][self.__currentStep])
-            self._commChannel.sigSetSyncInMovementSettings.emit(rotator, self.__rot_step_pos[idx][np.mod(self.__currentStep+1,self.__num_rot_steps)], False, True)  # bools: relative shift/absolute position, enabled/not enabled
-            self._commChannel.sigUpdateRotatorPosition.emit(rotator)
+                #self.__logger.info(f'{rotator} did a initial rot step to : {self.__rot_step_pos[idx][self.__currentStep]}') #Simone debugging
+            else:
+                self._commChannel.sigSetSyncInMovementSettings.emit(rotator, self.__rot_step_pos[idx][np.mod(self.__currentStep+1,self.__num_rot_steps)], False, True)  # bools: relative shift/absolute position, enabled/not enabled
+                self._commChannel.sigUpdateRotatorPosition.emit(rotator)
+                #self.__logger.info(f'{rotator} did a rot step to: {self.__rot_step_pos[idx][np.mod(self.__currentStep+1,self.__num_rot_steps)]}') #Simone debugging
         self.__currentStep += 1
 
     def moveAbsRotator(self, name, pos):

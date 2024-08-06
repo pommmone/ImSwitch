@@ -35,7 +35,7 @@ class RotationScanWidget(Widget):
         self.pars['RotStartEdit'] = QtWidgets.QLineEdit('0')
         self.pars['RotStartUnit'] = QtWidgets.QLabel(' deg')
         self.pars['RotStopLabel'] = QtWidgets.QLabel('Pol. rotation stop')
-        self.pars['RotStopEdit'] = QtWidgets.QLineEdit('80')
+        self.pars['RotStopEdit'] = QtWidgets.QLineEdit('180')
         self.pars['RotStopUnit'] = QtWidgets.QLabel(' deg')
         self.pars['LoadCalibrateLabel'] = QtWidgets.QLabel('Calibration file')
         # add all available calibrations to a dropdown list
