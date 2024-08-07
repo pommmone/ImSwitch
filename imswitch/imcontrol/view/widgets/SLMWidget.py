@@ -151,9 +151,9 @@ class SLMWidget(Widget):
 
         # Choose which objective is in use
         self.controlPanel.objlensComboBox = QtWidgets.QComboBox()
-        self.controlPanel.objlensComboBox.addItem("No objective")
         self.controlPanel.objlensComboBox.addItem("Oil")
         self.controlPanel.objlensComboBox.addItem("Glycerol")
+        self.controlPanel.objlensComboBox.addItem("No objective")
         self.controlPanel.choiceInterfaceLayout.addWidget(QtWidgets.QLabel('Select objective:'),
                                                           1, 0)
         self.controlPanel.choiceInterfaceLayout.addWidget(self.controlPanel.objlensComboBox, 1, 1)

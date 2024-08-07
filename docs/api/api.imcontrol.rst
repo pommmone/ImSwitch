@@ -25,7 +25,7 @@ api.imcontrol
 
       Returns the positions of all positioners. 
 
-   .. method:: loadScanParamsFromFile(filePath: str) -> None
+   .. method:: loadScanParamsFromFile(filePath: str) -> None #comment from Simone: I tink originally from basecontroller, now also scancontrollerpointscan (I guess make sure only one is in the setup)
 
       Loads scanning parameters from the specified file. 
 
@@ -38,6 +38,10 @@ api.imcontrol
 
       Runs a scan with the set scanning parameters. 
 
+   .. method::  runScanAdvanced() -> None #comment from Simone: added this from scancontrollerpointscan
+      
+      Runs a scan with the set scanning parameters. 
+   
    .. method:: saveScanParamsToFile(filePath: str) -> None
 
       Saves the set scanning parameters to the specified file. 
@@ -159,4 +163,15 @@ api.imcontrol
    .. method:: stopRecording() -> None
 
       Stops recording. 
+   #TODO maskmode does not work yet, we to change this so that it takes a sting!
+   .. method:: setMask(maskMode) -> None #maskMode = MaskMode.Gauss or MaskMode.Donut etc
 
+      Sets SLM Mask to Gaussian or Donut or etc.
+
+   .. method:: loadParams() -> None
+
+      Loads saved SLM parameters from file
+   
+   .. method:: toggleSLMDisplay(bool) -> None
+
+      Enable SLM display end thereby turn on

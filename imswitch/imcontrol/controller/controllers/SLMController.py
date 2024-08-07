@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 
-from imswitch.imcommon.model import dirtools, initLogger
+from imswitch.imcommon.model import APIExport, dirtools, initLogger
 from imswitch.imcontrol.model.managers.SLMManager import MaskMode, Direction
 from ..basecontrollers import ImConWidgetController
 
@@ -63,6 +63,7 @@ class SLMController(ImConWidgetController):
         # Initial SLM display
         self.displayMask(self._master.slmManager.maskCombined)
 
+    @APIExport(runOnUIThread=True)
     def toggleSLMDisplay(self, enabled):
         self._widget.setSLMDisplayVisible(enabled)
 
@@ -158,6 +159,7 @@ class SLMController(ImConWidgetController):
         }
         return info_dict
 
+    @APIExport(runOnUIThread=True)
     def loadParams(self):
         obj = self._widget.controlPanel.objlensComboBox.currentText()
         if obj == 'No objective':
@@ -202,7 +204,7 @@ class SLMController(ImConWidgetController):
                 aberParams.param(maskname).param(aberparamname).setValue(
                     float(state_aber[maskname][aberparamname])
                 )
-
+    @APIExport(runOnUIThread=True)
     def setMask(self, maskMode):
         mask = self._widget.controlPanel.maskComboBox.currentIndex()  # 0 = donut (left), 1 = tophat (right)
         self._master.slmManager.setMask(mask, maskMode)

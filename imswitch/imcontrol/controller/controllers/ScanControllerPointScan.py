@@ -4,7 +4,7 @@ import configparser
 from ast import literal_eval
 
 from ..basecontrollers import SuperScanController
-
+from imswitch.imcommon.model import APIExport
 
 class ScanControllerPointScan(SuperScanController):
     def __init__(self, *args, **kwargs):
@@ -49,7 +49,8 @@ class ScanControllerPointScan(SuperScanController):
             self._widget.setPhaseDelayPar(self._analogParameterDict['phase_delay'])
         finally:
             self.settingParameters = False
-
+    
+    @APIExport(runOnUIThread=True)
     def runScanAdvanced(self, *, recalculateSignals=True, isNonFinalPartOfSequence=False,
                         sigScanStartingEmitted):
         """ Runs a scan with the set scanning parameters. """
@@ -178,6 +179,7 @@ class ScanControllerPointScan(SuperScanController):
         with open(filePath, 'w') as configfile:
             config.write(configfile)
 
+    @APIExport(runOnUIThread=True)
     def loadScanParamsFromFile(self, filePath: str) -> None:
         """ Loads scanning parameters from the specified file. """
         config = configparser.ConfigParser()
