@@ -57,7 +57,7 @@ class RotationScanWidget(Widget):
         
 
         # Parameters for calibration routine
-        self.pars['CalibrationPrompt'] = QtWidgets.QLineEdit('Calibration not active.')
+        self.pars['CalibrationPrompt'] = QtWidgets.QLineEdit('')
         self.pars['CalibrationPrompt'].setReadOnly(True)
         calibrationPromptPalette = QtGui.QPalette()
         calibrationPromptPalette.setColor(QtGui.QPalette.Text, QtGui.QColor(150, 150, 150))
