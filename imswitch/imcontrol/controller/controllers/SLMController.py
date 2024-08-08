@@ -207,6 +207,8 @@ class SLMController(ImConWidgetController):
     @APIExport(runOnUIThread=True)
     def setMask(self, maskMode):
         mask = self._widget.controlPanel.maskComboBox.currentIndex()  # 0 = donut (left), 1 = tophat (right)
+        if isinstance(maskMode, str):
+            maskMode = getattr(MaskMode, maskMode) 
         self._master.slmManager.setMask(mask, maskMode)
         slm_info_dict = self.getInfoDict(generalParams=self._widget.slmParameterTree.p,
                                         aberParams=self._widget.aberParameterTree.p)

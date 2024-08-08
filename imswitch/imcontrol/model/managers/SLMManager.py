@@ -107,6 +107,11 @@ class SLMManager(SignalInterface):
             self.__masks[mask].setBlack()
             self.__masksTilt[mask].setBlack()
             self.__masksAber[mask].setBlack()
+        else:
+            self.__logger.error(
+                'Mask not found'
+            )
+            
 
     def moveMask(self, mask, direction, amount):
         if direction == direction.Up:

@@ -163,10 +163,10 @@ api.imcontrol
    .. method:: stopRecording() -> None
 
       Stops recording. 
-   #TODO maskmode does not work yet, we to change this so that it takes a sting!
-   .. method:: setMask(maskMode) -> None #maskMode = MaskMode.Gauss or MaskMode.Donut etc
-
-      Sets SLM Mask to Gaussian or Donut or etc.
+   
+   .. method:: setMask(maskModeStr: str) -> None 
+      
+      Sets SLM Mask to Gaussian or Donut or etc. Availalbe: Donut, TopHat, Half, Gauss, Hex, Quad, Split, Black
 
    .. method:: loadParams() -> None
 
