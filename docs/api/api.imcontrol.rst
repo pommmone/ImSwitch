@@ -38,7 +38,7 @@ api.imcontrol
 
       Runs a scan with the set scanning parameters. 
 
-   .. method::  runScanAdvanced() -> None #comment from Simone: added this from scancontrollerpointscan
+   .. method::  runScanAdvanced() -> None #comment from Simone: NOT WORKING YET, TODO added this from scancontrollerpointscan
       
       Runs a scan with the set scanning parameters. 
    
@@ -144,7 +144,7 @@ api.imcontrol
 
    .. method:: snapImage() -> None
 
-      Take a snap and save it to a .tiff file at the set file path. 
+      Take a snap and save it as the selected file format at the set file path. 
 
    .. method:: startRecording() -> None
 
@@ -164,9 +164,9 @@ api.imcontrol
 
       Stops recording. 
    
-   .. method:: setMask(maskModeStr: str) -> None 
+   .. method:: setMask(maskMode: str) -> None 
       
-      Sets SLM Mask to Gaussian or Donut or etc. Availalbe: Donut, TopHat, Half, Gauss, Hex, Quad, Split, Black
+      Sets SLM Mask to Gaussian or Donut or etc. Available: Donut, TopHat, Half, Gauss, Hex, Quad, Split, Black
 
    .. method:: loadParams() -> None
 
@@ -175,3 +175,7 @@ api.imcontrol
    .. method:: toggleSLMDisplay(bool) -> None
 
       Enable SLM display end thereby turn on
+
+   .. method:: moveAbs(name: str, pos: str) -> None or float?
+
+      Get rotator with name to move to posisition pos

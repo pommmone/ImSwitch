@@ -224,7 +224,6 @@ class RotationScanWorker(Worker):
         self.__rot_step_pos = rotsteps
         self.__num_rot_steps = numrotsteps
         self.apd_count = self._apdCounter() #WIP Simone
-        #self.apd_count = 2
         
         # connect new frame signal to prep next step
         self.signal_count = 0 #initialize, how many signals to wait for to rotate rotators

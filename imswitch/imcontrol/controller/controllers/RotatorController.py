@@ -1,5 +1,4 @@
-from imswitch.imcommon.model import initLogger
-
+from imswitch.imcommon.model import APIExport, initLogger
 from ..basecontrollers import ImConWidgetController
 
 
@@ -17,7 +16,7 @@ class RotatorController(ImConWidgetController):
 
         # Connect PositionerWidget signals
         self._widget.sigMoveRelClicked.connect(lambda name, dir: self.moveRel(name, dir))
-        self._widget.sigMoveAbsClicked.connect(lambda name: self.moveAbs(name))
+        self._widget.sigMoveAbsClicked.connect(lambda name: self.moveAbs(name, self._widget.getAbsPos(name))) # Simone: to get scriptable, make sure that when the button is clicked, the method still fetches the absolute postion from the GUI widget
         self._widget.sigSetZeroClicked.connect(lambda name: self.setZeroPos(name))
         self._widget.sigSetSpeedClicked.connect(lambda name: self.setSpeed(name))
         self._widget.sigStartContMovClicked.connect(lambda name: self.startContMov(name))
@@ -39,8 +38,9 @@ class RotatorController(ImConWidgetController):
         self._master.rotatorsManager[name].move_rel(dist)
         self.updatePosition(name)
 
-    def moveAbs(self, name):
-        pos = self._widget.getAbsPos(name)
+    @APIExport(runOnUIThread=True)
+    def moveAbs(self, name, pos): #change by Simone: for scriptable, add pos position
+        #pos = self._widget.getAbsPos(name) #commented by Simone because we want it scriptable. Now connected to the widget through line 20
         self._master.rotatorsManager[name].move_abs(pos)
         self.updatePosition(name)
 
