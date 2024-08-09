@@ -122,6 +122,9 @@ class RotationScanWidget(Widget):
         """ Set text of calibration button during calibration. """
         self.pars['CalibrateButton'].setText(text)
 
+    def setRotationStart(self, rotationStartPar):
+        self.pars['RotStartEdit'].setText(rotationStartPar)
+
 
 # Copyright (C) 2020-2022 ImSwitch developers
 # This file is part of ImSwitch.

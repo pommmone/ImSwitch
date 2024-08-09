@@ -6,9 +6,8 @@ import numpy as np
 import scipy.interpolate as interp
 
 from imswitch.imcommon.framework import Thread, Worker
-from imswitch.imcommon.model import dirtools, initLogger
+from imswitch.imcommon.model import dirtools, initLogger, APIExport
 from ..basecontrollers import ImConWidgetController
-
 
 
 class RotationScanController(ImConWidgetController):
@@ -271,6 +270,10 @@ class RotationScanWorker(Worker):
         for rotator in self._rotators:
             self._commChannel.sigSetSyncInMovementSettings.emit(rotator, 0, False, False) 
         self._commChannel.sigNewFrame.disconnect(self.__prepRotationHandle)
+
+    @APIExport(runOnUIThread=True)
+    def changeRotationStart(self, rotationStartPar): #Simone added this to allow imscripting
+        self._widget.setRotationStart(rotationStartPar)
 
 
 # Copyright (C) 2020-2021 ImSwitch developers
