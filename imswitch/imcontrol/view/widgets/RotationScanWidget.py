@@ -1,7 +1,7 @@
 from qtpy import QtCore, QtWidgets, QtGui
 import os
 from imswitch.imcontrol.view import guitools as guitools
-from imswitch.imcommon.model import dirtools
+from imswitch.imcommon.model import dirtools, initLogger
 from .basewidgets import Widget
 
 
@@ -14,6 +14,8 @@ class RotationScanWidget(Widget):
     sigCalibration = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
+
+        self.__logger = initLogger(self, tryInheritParent=True)
         super().__init__(*args, **kwargs)
         self.numPositioners = 0
         self.pars = {}
@@ -51,7 +53,7 @@ class RotationScanWidget(Widget):
         self.pars['ActivateButton'] = guitools.BetterPushButton('Activate during scan')
         self.pars['CalibrateButton'] = guitools.BetterPushButton('Calibrate polarization')
         self.pars['SaveCalibrationButton'] = guitools.BetterPushButton('Save calibration')
-        self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration') #want drop down list, but still need to load
+        self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration') # we have a drop down list, but still need to load
         
         # add all available polarization rotation calibrations to a dropdown list
         
@@ -122,8 +124,23 @@ class RotationScanWidget(Widget):
         """ Set text of calibration button during calibration. """
         self.pars['CalibrateButton'].setText(text)
 
-    def setRotationStart(self, rotationStartPar):
-        self.pars['RotStartEdit'].setText(rotationStartPar)
+    def setRotationParameters(self, rotationPars):
+        """ Set text of rotation step, start and stop angle. """
+        self.pars['RotStepEdit'].setText(rotationPars[0])
+        self.pars['RotStartEdit'].setText(rotationPars[1])
+        self.pars['RotStopEdit'].setText(rotationPars[2])
+        
+
+    def setLoadCalibrate(self, calibname):
+        # Find the index of the provided text
+        index = self.pars['LoadCalibrateEdit'].findText(calibname)
+        # Check if the text exists in the QComboBox
+        if index == -1:
+            self.__logger.error(f"'{calibname}' not found in the QComboBox")
+        else:
+            # Set the current index to the found index
+            self.pars['LoadCalibrateEdit'].setCurrentIndex(index)
+
 
 
 # Copyright (C) 2020-2022 ImSwitch developers

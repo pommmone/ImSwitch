@@ -148,13 +148,17 @@ class RotationScanController(ImConWidgetController):
         with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'w') as f:
             json.dump(save_dict, f, indent=4)
 
-    def loadCalibration(self):
+    @APIExport(runOnUIThread=True)
+    def loadCalibration(self, calibname = None):
         """ Load calibration data, to be used to interpolate the same spline interpolation in a new instance. """
         rotator_positions = []
-        calibname = self.getCalibName() + '.json'
+        if calibname is None:
+            calibname = os.path.join(self.__calibration_dir, self.getCalibName() + '.json')
+        else:
+            self._widget.setLoadCalibrate(calibname.split('/')[-1])
+            calibname = calibname + '.json'
         print(calibname)
-        #with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'r') as f:
-        with open(os.path.join(self.__calibration_dir, calibname), 'r') as f: #
+        with open(calibname, 'r') as f: #
             data = json.load(f)
         for idx, item in enumerate(data.items()):
             if idx == 0:
@@ -210,6 +214,20 @@ class RotationScanController(ImConWidgetController):
         """ Set calibration prompt text in the widget, during calibration. """
         self._widget.setCalibrationPrompt(text)
 
+    @APIExport(runOnUIThread=True)
+    def changeRotationParameters(self, rotationPars): #Simone added this to allow imscripting (API)
+        self._widget.setRotationParameters(rotationPars)
+
+
+    @APIExport(runOnUIThread=True)
+    def activateRotScan(self, activate: bool):
+        """
+        API callable method to activate or deactivate the scan.
+        
+        :param activate: Boolean value indicating whether to activate (True) or deactivate (False) the scan.
+        """
+        self._widget.sigActivate.emit(not activate) # 'not activate' because the signal should be True for deactivate 
+
 
 class RotationScanWorker(Worker):
     """ Rotation scan worker, to take care of the rotation step preparations in a separate thread. """
@@ -222,7 +240,7 @@ class RotationScanWorker(Worker):
         self._commChannel = controller._commChannel
         self.__rot_step_pos = rotsteps
         self.__num_rot_steps = numrotsteps
-        self.apd_count = self._apdCounter() #WIP Simone
+        self.apd_count = self._apdCounter() #added by Simone
         
         # connect new frame signal to prep next step
         self.signal_count = 0 #initialize, how many signals to wait for to rotate rotators
@@ -271,9 +289,6 @@ class RotationScanWorker(Worker):
             self._commChannel.sigSetSyncInMovementSettings.emit(rotator, 0, False, False) 
         self._commChannel.sigNewFrame.disconnect(self.__prepRotationHandle)
 
-    @APIExport(runOnUIThread=True)
-    def changeRotationStart(self, rotationStartPar): #Simone added this to allow imscripting
-        self._widget.setRotationStart(rotationStartPar)
 
 
 # Copyright (C) 2020-2021 ImSwitch developers

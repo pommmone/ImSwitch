@@ -184,6 +184,14 @@ api.imcontrol
 
       Get rotator with name to move to posisition pos
 
-   .. method:: changeRotationStart(rotationStartPar: str)
+   .. method:: changeRotationParameters(rotationPars: List[str])
 
-      change rotation start angle
+      change rotation step, start angle and stop angle
+
+   .. method:: loadCalibration(calibname: str)
+
+      load rotation calibration
+
+   .. method:: activateRotScan(activate: bool)
+
+      load rotation calibration     
