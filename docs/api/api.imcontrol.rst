@@ -194,4 +194,4 @@ api.imcontrol
 
    .. method:: activateRotScan(activate: bool)
 
-      load rotation calibration     
+      activate rotation scan on d3 scan axis    
