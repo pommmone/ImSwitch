@@ -20,7 +20,7 @@ from imswitch.imcommon.framework import Timer
 
 from imswitch.imcommon.model import dirtools
 from ..basecontrollers import ImConWidgetController
-from imswitch.imcommon.model import initLogger
+from imswitch.imcommon.model import initLogger, APIExport
 
 _logsDir = os.path.join(dirtools.UserFileDirs.Root, 'recordings', 'logs_etsted')
 
@@ -378,6 +378,7 @@ class EtSTEDController(ImConWidgetController):
 
         #self._widget.analysisHelpWidget.img.render()
 
+    @APIExport(runOnUIThread=True)
     def getScanParameters(self):
         """ Load STED scan parameters from the scanning widget. """
         self._commChannel.sigRequestScanParameters.emit()

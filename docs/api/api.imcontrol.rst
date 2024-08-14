@@ -37,6 +37,10 @@ api.imcontrol
 
       set the d3Stepdelay parameter (additional parameter rom the pointscan widget, mostly relevant for the polarization during scan)
 
+   .. method:: changeScanSize(positionerName: str, size: float) -> None
+
+      change scan size of positioner
+
    .. method:: movePositioner(positionerName: str, axis: str, dist: float) -> None
 
       Moves the specified positioner axis by the specified number of
@@ -188,10 +192,15 @@ api.imcontrol
 
       change rotation step, start angle and stop angle
 
-   .. method:: loadCalibration(calibname: str)
+   .. method:: loadCalibration(calibname: str) -> None
 
       load rotation calibration
 
-   .. method:: activateRotScan(activate: bool)
+   .. method:: activateRotScan(activate: bool) -> None
 
-      activate rotation scan on d3 scan axis    
+      activate rotation scan on d3 scan axis
+
+   .. method:: getScanParameters() -> None
+
+      From etSTEd controller.
+      Load the scan parameters of the scan widget for etSTED

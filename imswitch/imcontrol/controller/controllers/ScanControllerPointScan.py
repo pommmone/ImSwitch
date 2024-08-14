@@ -205,6 +205,10 @@ class ScanControllerPointScan(SuperScanController):
     def changeScanCenterPos(self, positionerName, positionerScanCenterPos): #Simone added this to allow imscripting
         self._widget.setScanCenterPos(positionerName, positionerScanCenterPos)
 
+    @APIExport(runOnUIThread=True)
+    def changeScanSize(self, positioner: str, size: float): #Simone added this to allow imscripting
+        self._widget.setScanSize(positioner, size)
+
 # Copyright (C) 2020-2021 ImSwitch developers
 # This file is part of ImSwitch.
 #
