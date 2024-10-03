@@ -28,6 +28,12 @@ class RotationScanController(ImConWidgetController):
         self._widget.sigCalibration.connect(lambda: self.calibrateRotationsInitiate())
         self._widget.pars['LoadCalibrationButton'].clicked.connect(lambda: self.loadCalibration())
         self._widget.pars['SaveCalibrationButton'].clicked.connect(lambda: self.saveCalibration())
+        #TODO Work in Progess Simone. Need to write functions
+
+        self._widget.sigManual.connect(lambda: self.manualScan()) #WIP
+        self._widget.sigPlus.connect(lambda: self.manualPlusStep()) #WIP
+        self._widget.sigMinus.connect(lambda: self.manualMinusStep()) #WIP
+
 
         # Create signal function trigger handles
         self.__toggleExperimentHandle = lambda: self.toggleExperiment(True)
@@ -38,6 +44,9 @@ class RotationScanController(ImConWidgetController):
         self.__calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan') 
         if not os.path.exists(self.__calibration_dir):
             os.makedirs(self.__calibration_dir)
+
+        #initate manual Scan parameter
+        self.manualBool = False
 
         # initiate thread and worker
         self._rotationScanWorker = None
@@ -58,7 +67,10 @@ class RotationScanController(ImConWidgetController):
         self.enableWidgetInterface(enableInterfaceBool)
         if not enableInterfaceBool:
             # initiate experiment
-            self.initiateExperiment()
+            try:
+                self.initiateExperiment()
+            except Exception:
+                self.enableWidgetInterface(not enableInterfaceBool)
         else:
             # finalize experiment, disconnect signals, shut down scan worker
             self._commChannel.sigScanDone.disconnect(self.__toggleExperimentHandle)
@@ -68,12 +80,22 @@ class RotationScanController(ImConWidgetController):
                 pass
 
     def enableWidgetInterface(self, enableBool):
+        self._widget.enableManualInterface(enableBool)
         self._widget.enableInterface(enableBool)
         if enableBool:
             text = 'Activate during scan'
         elif not enableBool:
             text = 'Inactivate'
         self._widget.setActivateButtonText(text)
+        
+
+    def enableWidgetInterfaceManual(self, manualBool): #Same as above but for manual scan instead
+        self._widget.enableInterface(not manualBool)
+        if not manualBool:
+            text = 'Start manual scan'
+        elif manualBool:
+            text = 'Stop manual scan'
+        self._widget.setManualButtonText(text)
 
     def _createRotationScanWorker(self):
         self._rotationScanWorker = RotationScanWorker(self, self._rotators, self.__rot_step_pos, self.__num_rot_steps)
@@ -97,11 +119,17 @@ class RotationScanController(ImConWidgetController):
         self._rotators = self._master.rotatorsManager.getAllDeviceNames()
 
     def getRotationSteps(self):
-        self.__pol_rot_params = self.getPolRotationParams()
-        pol_steps = np.arange(*self.__pol_rot_params)
-        self.__rot_step_pos = self.getRotationStepPositions(pol_steps)
-        self.__num_rot_steps = len(self.__rot_step_pos[0])
-        self.__logger.info(self.__rot_step_pos)
+        try:
+            self.__pol_rot_params = self.getPolRotationParams()
+            self.pol_steps = np.arange(*self.__pol_rot_params)
+            self.__rot_step_pos = self.getRotationStepPositions(self.pol_steps)
+            self.__num_rot_steps = len(self.__rot_step_pos[0])
+            self.__logger.info(self.__rot_step_pos)
+            self.__logger.info(self.pol_steps)
+            self.getexcept = False
+        except Exception:
+            self.__logger.error(f'Error getting rotation steps. Load calibration')
+            self.getexcept = True
 
     def getPolRotationParams(self):
         """ Get the total polarization rotation (start, stop, step). """
@@ -109,12 +137,79 @@ class RotationScanController(ImConWidgetController):
 
     def getRotationStepPositions(self, pol_steps):
         """ Get the interpolated rotator step positions for each rotator in the experiment, as a list of lists.
-        Prep polarization rotation steps by mod (calibration range), to move all values to the calibrated range (normally 180 deg). """
+        Prep polarization rotation steps by mod (calibration range), to move all values to the calibrated range (currently 250 deg). """
         pol_steps = np.mod(pol_steps, self.__calibration_range)
         rotator_step_pos = []
         for spline in self.__interp_splines:
             rotator_step_pos.append(interp.splev(pol_steps, spline))
         return rotator_step_pos
+    
+    def manualScan(self): #WIP Simone
+        """ Prepare manual scan and move to the first position."""
+        #TODO deactivate interface so that it is clear which paramters are being used!
+        self.__logger.info(f'manual is {self.manualBool}')
+        self.manualBool = not self.manualBool
+        self.__logger.info(f'manual set to {self.manualBool}')
+        self.enableWidgetInterfaceManual(self.manualBool)
+        self._widget.pars['ActivateButton'].setEnabled(not self.manualBool)
+
+        if self.manualBool:
+            #initiate
+            self.__manualindex = 0
+            self.getRotators()
+            self.getRotationSteps()
+            if self.getexcept:
+                self.__logger.error(f'manual Scan not started')
+                self.manualBool = not self.manualBool
+                self.__logger.info(f'manual set to {self.manualBool}')
+                self.enableWidgetInterfaceManual(self.manualBool)
+                self._widget.pars['ActivateButton'].setEnabled(not self.manualBool)
+            else:
+                self.setPolPositionText(str(self.pol_steps[self.__manualindex]))
+                for idx, rotator in enumerate(self._rotators):
+                        self._master.rotatorsManager[rotator].move_abs(self.__rot_step_pos[idx][self.__manualindex])
+                        self._commChannel.sigUpdateRotatorPosition.emit(rotator)
+                self._widget.pars['PlusButton'].setEnabled(True)
+                self._widget.pars['MinusButton'].setEnabled(True)
+        
+        else:
+            self._widget.pars['PlusButton'].setEnabled(False)
+            self._widget.pars['MinusButton'].setEnabled(False)
+
+    def manualPlusStep(self): #WIP Simone
+        if self.__manualindex < self.__num_rot_steps-1:
+            self.__manualindex += 1
+            self.setPolPositionText(str(self.pol_steps[self.__manualindex]))
+            for idx, rotator in enumerate(self._rotators):
+                self._master.rotatorsManager[rotator].move_abs(self.__rot_step_pos[idx][self.__manualindex])
+                self._commChannel.sigUpdateRotatorPosition.emit(rotator)        
+            
+            if self.__manualindex > 0:
+                self._widget.pars['MinusButton'].setEnabled(True)
+            else:
+                self._widget.pars['MinusButton'].setEnabled(False)
+
+            if self.__manualindex >= self.__num_rot_steps -1:
+                self._widget.pars['PlusButton'].setEnabled(False)
+        
+    def manualMinusStep(self): #WIP Simone
+        if self.__manualindex > 0:
+            self.__manualindex -= 1
+            self.setPolPositionText(str(self.pol_steps[self.__manualindex]))
+            for idx, rotator in enumerate(self._rotators):
+                self._master.rotatorsManager[rotator].move_abs(self.__rot_step_pos[idx][self.__manualindex])
+                self._commChannel.sigUpdateRotatorPosition.emit(rotator)        
+            
+            if self.__manualindex < self.__num_rot_steps:
+                self._widget.pars['PlusButton'].setEnabled(True)
+            else: 
+                self._widget.pars['PlusButton'].setEnabled(False)
+            if self.__manualindex <= 0:
+                self._widget.pars['MinusButton'].setEnabled(False)
+            
+    def setPolPositionText(self, text):
+        """ Set Pol position text in the widget, during manual scan. """
+        self._widget.setPolPositionText(text)
 
     def calibrateRotationsInitiate(self):
         """ Reset and initiate calibration of polarizer rotations. """
@@ -281,6 +376,7 @@ class RotationScanWorker(Worker):
     def moveAbsRotator(self, name, pos):
         """ Move a specific rotator to a certain position. """
         self._master.rotatorsManager[name].move_abs(pos)
+        self._commChannel.sigUpdateRotatorPosition.emit(name)
 
     def close(self):
         """ Close worker in thread when scan has finished. """

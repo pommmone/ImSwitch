@@ -1,6 +1,6 @@
 from imswitch.imcommon.model import APIExport, initLogger
 from ..basecontrollers import ImConWidgetController
-
+from PyQt5.QtCore import QTimer 
 
 class RotatorController(ImConWidgetController):
     """ Linked to RotatorWidget."""
@@ -26,10 +26,9 @@ class RotatorController(ImConWidgetController):
         self._commChannel.sigUpdateRotatorPosition.connect(lambda name: self.updatePosition(name))
         self._commChannel.sigSetSyncInMovementSettings.connect(lambda name, pos, rel_shift, enabled: self.setSyncInMovement(name, pos, rel_shift, enabled))
 
-        # Update current position in GUI
         for name, _ in self._master.rotatorsManager:
             self.updatePosition(name)
-
+ 
     def closeEvent(self):
         pass
 
@@ -60,6 +59,7 @@ class RotatorController(ImConWidgetController):
 
     def updatePosition(self, name):
         pos = self._master.rotatorsManager[name].position()
+        #self.__logger.info(f'{name} pos is {pos}') #debugging simone
         self._widget.updatePosition(name, pos)
 
     def setSyncInMovement(self, name, pos, rel_shift, enabled):

@@ -12,6 +12,9 @@ class RotationScanWidget(Widget):
 
     sigActivate = QtCore.Signal(bool)
     sigCalibration = QtCore.Signal()
+    sigManual = QtCore.Signal()
+    sigPlus = QtCore.Signal()
+    sigMinus = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
 
@@ -22,6 +25,7 @@ class RotationScanWidget(Widget):
         self.grid = QtWidgets.QGridLayout()
         self.setLayout(self.grid)
         self.enabled = True
+        self.manual = False
 
         self.calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan')
         if not os.path.exists(self.calibration_dir):
@@ -40,8 +44,9 @@ class RotationScanWidget(Widget):
         self.pars['RotStopEdit'] = QtWidgets.QLineEdit('180')
         self.pars['RotStopUnit'] = QtWidgets.QLabel(' deg')
         self.pars['LoadCalibrateLabel'] = QtWidgets.QLabel('Calibration file')
-        # add all available calibrations to a dropdown list
-        self.pars['LoadCalibrateEdit'] =  QtWidgets.QComboBox()
+
+        # Add all available calibrations to a dropdown list
+        self.pars['LoadCalibrateEdit'] = QtWidgets.QComboBox()
         self.LoadCalibrationFiles = list()
         for calib in os.listdir(self.calibration_dir):
             if os.path.isfile(os.path.join(self.calibration_dir, calib)):
@@ -53,10 +58,7 @@ class RotationScanWidget(Widget):
         self.pars['ActivateButton'] = guitools.BetterPushButton('Activate during scan')
         self.pars['CalibrateButton'] = guitools.BetterPushButton('Calibrate polarization')
         self.pars['SaveCalibrationButton'] = guitools.BetterPushButton('Save calibration')
-        self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration') # we have a drop down list, but still need to load
-        
-        # add all available polarization rotation calibrations to a dropdown list
-        
+        self.pars['LoadCalibrationButton'] = guitools.BetterPushButton('Load calibration')  # we have a drop down list, but still need to load
 
         # Parameters for calibration routine
         self.pars['CalibrationPrompt'] = QtWidgets.QLineEdit('')
@@ -68,19 +70,26 @@ class RotationScanWidget(Widget):
 
         # Grid layout definition
 
-        # Row 0: Calibration Load and related buttons
-        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 0, 0) 
-        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 0, 1) 
-        self.grid.addWidget(self.pars['LoadCalibrationButton'], 0, 3) 
+        # Create QLabel for section headers with larger and bold text
+        calibrate_label = QtWidgets.QLabel('<strong>Calibration</strong>')
+        parameters_label = QtWidgets.QLabel('<strong>Parameters</strong>')
 
-        # Row 1: Calibration buttons
-        self.grid.addWidget(self.pars['CalibrateButton'], 1, 3)
-        self.grid.addWidget(self.pars['SaveCalibrationButton'], 2, 3)
-        # Row 4: Calibration Prompt
-        self.grid.addWidget(self.pars['CalibrationPrompt'], 1, 0, 1, 3)
 
-        # Adding a spacer to separate Calibration and Pol Rotation section
-        self.grid.addItem(QtWidgets.QSpacerItem(10, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding), 4, 0, 1, -1)
+        # Row 0: Calibrate section header
+        self.grid.addWidget(calibrate_label, 0, 0, 1, 3)
+
+        # Row 1: Calibration Load and related buttons
+        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 1, 0)
+        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 1, 1)
+        self.grid.addWidget(self.pars['LoadCalibrationButton'], 1, 3)
+
+        # Row 2-3: Calibration buttons and prompt
+        self.grid.addWidget(self.pars['CalibrateButton'], 2, 3)
+        self.grid.addWidget(self.pars['SaveCalibrationButton'], 3, 3)
+        self.grid.addWidget(self.pars['CalibrationPrompt'], 2, 0, 1, 3)
+
+        # Row 4: Parameters section header
+        self.grid.addWidget(parameters_label, 4, 0, 1, 3)
 
         # Row 5-7: Pol Rotation Step, Start, Stop
         self.grid.addWidget(self.pars['RotStepLabel'], 5, 0)
@@ -93,18 +102,42 @@ class RotationScanWidget(Widget):
         self.grid.addWidget(self.pars['RotStopEdit'], 7, 1)
         self.grid.addWidget(self.pars['RotStopUnit'], 7, 2)
 
-        # Row 8: Activate button 
+        # Row 8: Activate button
         self.grid.addWidget(self.pars['ActivateButton'], 8, 3)
-   
 
-        # Spacer at the bottom
-        self.grid.addItem(QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding), 9, 0, 1, -1)
+        # Manual Scan section
+        manual_scan_label = QtWidgets.QLabel('<strong>Manual Scan</strong>')
 
+        self.pars['PolPositionLabel'] = QtWidgets.QLabel('Pol. position')
+        self.pars['PolPositionEdit'] = QtWidgets.QLineEdit('')
+        self.pars['PolPositionEdit'].setReadOnly(True)
+        self.pars['PolPositionUnit'] = QtWidgets.QLabel('deg')
+
+        self.pars['ManualButton'] = guitools.BetterPushButton('Start manual scan')
+        self.pars['PlusButton'] = guitools.BetterPushButton('+')
+        self.pars['PlusButton'].setEnabled(False)  # Disable by default
+        self.pars['MinusButton'] = guitools.BetterPushButton('-')
+        self.pars['MinusButton'].setEnabled(False)  # Disable by default
+
+        # Row 9: Manual Scan section header
+        self.grid.addWidget(manual_scan_label, 9, 0, 1, 3)
+
+        # Row 10: Pol Position, QLineEdit, and deg and Abs button
+        self.grid.addWidget(self.pars['PolPositionLabel'], 10, 0)
+        self.grid.addWidget(self.pars['PolPositionEdit'], 10, 1)
+        self.grid.addWidget(self.pars['PolPositionUnit'], 10, 2)
+        self.grid.addWidget(self.pars['ManualButton'], 10, 3)
+
+        # Row 11-12:  +, and - buttons
+        self.grid.addWidget(self.pars['PlusButton'], 11, 3)
+        self.grid.addWidget(self.pars['MinusButton'], 12, 3)
 
         # Connect signals
         self.pars['ActivateButton'].clicked.connect(lambda: self.sigActivate.emit(not self.enabled))
         self.pars['CalibrateButton'].clicked.connect(lambda: self.sigCalibration.emit())
-
+        self.pars['ManualButton'].clicked.connect(lambda: self.sigManual.emit())
+        self.pars['PlusButton'].clicked.connect(lambda: self.sigPlus.emit())
+        self.pars['MinusButton'].clicked.connect(lambda: self.sigMinus.emit())
 
     def getRotationStart(self):
         """ Returns the user-input polarization rotation start, in deg. """
@@ -126,6 +159,14 @@ class RotationScanWidget(Widget):
         self.pars['RotStepEdit'].setEnabled(enabled)
         self.enabled = enabled
 
+    def enableManualInterface(self,enabled):
+        """ For inactivating during scanning when ActivateButton pressed
+        and waiting for a scan. When scan finishes, enable again. """
+        self.pars['ManualButton'].setEnabled(enabled)
+        self.pars['PlusButton'].setEnabled(enabled)
+        self.pars['MinusButton'].setEnabled(enabled)
+
+
     def setActivateButtonText(self, text):
         """ Set text of activation button. """
         self.pars['ActivateButton'].setText(text)
@@ -144,7 +185,14 @@ class RotationScanWidget(Widget):
         self.pars['RotStartEdit'].setText(rotationPars[1])
         self.pars['RotStopEdit'].setText(rotationPars[2])
         
+    def setPolPositionText(self, text): #WIP Simone, this should automatically show the polarization in a manual scan
+        """ Set text of Pol position"""
+        self.pars['PolPositionEdit'].setText(text)
 
+    def setManualButtonText(self, text): #WIP Simone
+        """ Set text of manual scan button"""
+        self.pars['ManualButton'].setText(text)
+        
     def setLoadCalibrate(self, calibname):
         # Find the index of the provided text
         index = self.pars['LoadCalibrateEdit'].findText(calibname)
