@@ -8,7 +8,7 @@ import scipy.interpolate as interp
 from imswitch.imcommon.framework import Thread, Worker
 from imswitch.imcommon.model import dirtools, initLogger, APIExport
 from ..basecontrollers import ImConWidgetController
-
+from datetime import datetime
 
 class RotationScanController(ImConWidgetController):
     """ Linked to RotationScanWidget. Requires the ability of the rotators to together create
@@ -33,9 +33,8 @@ class RotationScanController(ImConWidgetController):
         self.__toggleExperimentHandle = lambda: self.toggleExperiment(True)
 
         # Initiate parameters used during calibration
-        self.__calibration_range = 180
-        self.__calibrationPolSteps = np.arange(0,self.__calibration_range+1,20).tolist()
-        self.__calibration_filename = 'polarization_calibration.json'
+        self.__calibration_range = 250
+        self.__calibrationPolSteps = np.arange(0,self.__calibration_range+1,10).tolist()
         self.__calibration_dir = os.path.join(dirtools.UserFileDirs.Root, 'imcontrol_rotscan') 
         if not os.path.exists(self.__calibration_dir):
             os.makedirs(self.__calibration_dir)
@@ -145,7 +144,7 @@ class RotationScanController(ImConWidgetController):
         for rotator, positions in enumerate(self.__rotCalPos):
             save_dict[f'pos{rotator}'] = positions
 
-        with open(os.path.join(self.__calibration_dir, self.__calibration_filename), 'w') as f:
+        with open(os.path.join(self.__calibration_dir, f'{datetime.now().strftime("%Y%m%d_%Hh%Mm")}_polarization_calibration.json'), 'w') as f:
             json.dump(save_dict, f, indent=4)
 
     @APIExport(runOnUIThread=True)
