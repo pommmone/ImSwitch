@@ -66,26 +66,40 @@ class RotationScanWidget(Widget):
         calibrationPromptPalette.setColor(QtGui.QPalette.Base, QtGui.QColor(60, 60, 60))
         self.pars['CalibrationPrompt'].setPalette(calibrationPromptPalette)
 
-        self.grid.addWidget(self.pars['RotStepLabel'], 1, 0)
-        self.grid.addWidget(self.pars['RotStepEdit'], 1, 1)
-        self.grid.addWidget(self.pars['RotStepUnit'], 1, 2)
-        self.grid.addWidget(self.pars['RotStartLabel'], 2, 0)
-        self.grid.addWidget(self.pars['RotStartEdit'], 2, 1)
-        self.grid.addWidget(self.pars['RotStartUnit'], 2, 2)
-        self.grid.addWidget(self.pars['RotStopLabel'], 3, 0)
-        self.grid.addWidget(self.pars['RotStopEdit'], 3, 1)
-        self.grid.addWidget(self.pars['RotStopUnit'], 3, 2)
+        # Grid layout definition
+
+        # Row 0: Calibration Load and related buttons
+        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 0, 0) 
+        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 0, 1) 
+        self.grid.addWidget(self.pars['LoadCalibrationButton'], 0, 3) 
+
+        # Row 1: Calibration buttons
         self.grid.addWidget(self.pars['CalibrateButton'], 1, 3)
-        self.grid.addWidget(self.pars['LoadCalibrateLabel'], 0, 0) # new for drop down list
-        self.grid.addWidget(self.pars['LoadCalibrateEdit'], 0, 1) # new for drop down list
-        self.grid.addWidget(self.pars['LoadCalibrationButton'], 0, 3) # want drop down list left of this
         self.grid.addWidget(self.pars['SaveCalibrationButton'], 2, 3)
-        self.grid.addWidget(self.pars['ActivateButton'], 3, 3)
-        self.grid.addItem(QtWidgets.QSpacerItem(10, 10,
-                            QtWidgets.QSizePolicy.Minimum,
-                            QtWidgets.QSizePolicy.Expanding),
-                            4, 0, 1, -1)
-        self.grid.addWidget(self.pars['CalibrationPrompt'], 5, 0, 1, 4)
+        # Row 4: Calibration Prompt
+        self.grid.addWidget(self.pars['CalibrationPrompt'], 1, 0, 1, 3)
+
+        # Adding a spacer to separate Calibration and Pol Rotation section
+        self.grid.addItem(QtWidgets.QSpacerItem(10, 20, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding), 4, 0, 1, -1)
+
+        # Row 5-7: Pol Rotation Step, Start, Stop
+        self.grid.addWidget(self.pars['RotStepLabel'], 5, 0)
+        self.grid.addWidget(self.pars['RotStepEdit'], 5, 1)
+        self.grid.addWidget(self.pars['RotStepUnit'], 5, 2)
+        self.grid.addWidget(self.pars['RotStartLabel'], 6, 0)
+        self.grid.addWidget(self.pars['RotStartEdit'], 6, 1)
+        self.grid.addWidget(self.pars['RotStartUnit'], 6, 2)
+        self.grid.addWidget(self.pars['RotStopLabel'], 7, 0)
+        self.grid.addWidget(self.pars['RotStopEdit'], 7, 1)
+        self.grid.addWidget(self.pars['RotStopUnit'], 7, 2)
+
+        # Row 8: Activate button 
+        self.grid.addWidget(self.pars['ActivateButton'], 8, 3)
+   
+
+        # Spacer at the bottom
+        self.grid.addItem(QtWidgets.QSpacerItem(10, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding), 9, 0, 1, -1)
+
 
         # Connect signals
         self.pars['ActivateButton'].clicked.connect(lambda: self.sigActivate.emit(not self.enabled))
