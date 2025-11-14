@@ -4,7 +4,7 @@ import h5py
 import numpy as np
 import tifffile as tiff
 import zarr
-
+import time
 from imswitch.imcommon.model import initLogger
 
 
@@ -148,8 +148,26 @@ class DataObj:
                 self.datasetName == other.datasetName)
 
     def checkLock(self):
-        if self.attrs['writing']:
-            raise OSError(f'Writing in progress')
+        try:
+            if self.attrs['writing']:
+                raise OSError(f'Writing in progress')
+        except Exception:
+            pass
+    
+    def checkModifTime(self,minDiffTime):
+        """ 
+        This function checks last modif time of the file and throw error if too close to current time.
+        arg:
+            `minDiffTime`: float or int
+                minimum difference time in sec for not throwing exception
+        """
+
+        lastModif = os.path.getmtime(self.dataPath)
+        print(lastModif)
+        print(time.time())
+        if lastModif + minDiffTime > time.time():
+            raise OSError(f'Modif time less than {minDiffTime}sec ago')
+
 
 
 # Copyright (C) 2020-2021 ImSwitch developers
